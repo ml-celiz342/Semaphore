@@ -1,0 +1,32 @@
+- hosts: all
+  become: true
+
+  vars:
+    base_dir: /var/opt/plataforma/cargar_data/config/certs
+    certs_src: "{{ playbook_dir }}/files/certs"
+
+  tasks:
+    - name: Crear estructura de directorios
+      file:
+        path: "{{ base_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+        recurse: yes
+
+    - name: Copiar fullchain.pem
+      copy:
+        src: "{{ certs_src }}/fullchain.pem"
+        dest: "{{ base_dir }}/fullchain.pem"
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Copiar privkey.pem
+      copy:
+        src: "{{ certs_src }}/privkey.pem"
+        dest: "{{ base_dir }}/privkey.pem"
+        owner: root
+        group: root
+        mode: '0600'
