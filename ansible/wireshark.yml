@@ -1,5 +1,5 @@
 - hosts: all
-  become: true # Use privilege escalation
+  become: true  # Use privilege escalation
   tasks:
     - name: Actualizar cache de apt
       apt:
@@ -16,6 +16,11 @@
         question: wireshark-common/install-setuid
         value: true
         vtype: boolean
+
+    - name: Crear grupo wireshark si no existe
+      group:
+        name: wireshark
+        state: present
 
     - name: Actualizar cache tras configuración
       apt:
