@@ -1,0 +1,17 @@
+- hosts: all
+  become: true # Elevate privileges to perform installation
+  tasks:
+    - name: Actualizar cache de apt
+      apt:
+        update_cache: yes
+
+    - name: Instalar Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Habilitar Docker al iniciar
+      systemd:
+        name: docker
+        enabled: true
+        state: started

@@ -1,0 +1,4 @@
+- hosts: all
+  tasks:
+    - name: Ver versión de Docker
+      command: docker --version
