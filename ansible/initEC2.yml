@@ -1,0 +1,114 @@
+- hosts: all
+  become: true
+  vars:
+    username: deploy
+    timezone: America/Argentina/Buenos_Aires
+
+  tasks:
+    - name: Actualizar cache de apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Actualizar sistema
+      apt:
+        upgrade: dist
+
+    - name: Instalar dependencias base
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - sudo
+          - make
+        state: present
+
+    - name: Crear usuario {{ username }}
+      user:
+        name: "{{ username }}"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        create_home: yes
+
+    - name: Crear directorio para keyrings de Docker
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Descargar GPG key de Docker
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Obtener codename de Ubuntu
+      command: lsb_release -cs
+      register: ubuntu_codename
+      changed_when: false
+
+    - name: Configurar repositorio oficial de Docker
+      copy:
+        dest: /etc/apt/sources.list.d/docker.sources
+        content: |
+          Types: deb
+          URIs: https://download.docker.com/linux/ubuntu
+          Suites: {{ ubuntu_codename.stdout }}
+          Components: stable
+          Signed-By: /etc/apt/keyrings/docker.asc
+
+    - name: Actualizar cache luego de agregar repo Docker
+      apt:
+        update_cache: yes
+
+    - name: Instalar Docker y componentes
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Habilitar y arrancar Docker
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Agregar {{ username }} al grupo docker
+      user:
+        name: "{{ username }}"
+        groups: docker
+        append: yes
+
+    - name: Configurar zona horaria Argentina
+      timezone:
+        name: "{{ timezone }}"
+
+    - name: Habilitar vm.overcommit_memory
+      sysctl:
+        name: vm.overcommit_memory
+        value: "1"
+        state: present
+        reload: yes
+
+    - name: Mostrar versión de Docker
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Mostrar versión de Docker Compose
+      command: docker compose version
+      register: docker_compose_version
+      changed_when: false
+
+    - name: Debug Docker
+      debug:
+        msg:
+          - "{{ docker_version.stdout }}"
+          - "{{ docker_compose_version.stdout }}"
