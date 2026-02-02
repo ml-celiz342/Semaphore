@@ -1,4 +1,11 @@
 - hosts: all
+  gather_facts: false
   tasks:
-    - name: Ver versión de Docker
+    - name: Obtener versión de Docker
       command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Mostrar versión de Docker
+      debug:
+        msg: "{{ docker_version.stdout }}"
