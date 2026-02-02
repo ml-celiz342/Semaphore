@@ -1,0 +1,38 @@
+- hosts: all
+  become: true # Use privilege escalation
+  tasks:
+    - name: Actualizar cache de apt
+      apt:
+        update_cache: yes
+
+    - name: Instalar Wireshark
+      apt:
+        name: wireshark
+        state: present
+
+    - name: Permitir uso de captura por cualquier usuario
+      debconf:
+        name: wireshark-common
+        question: wireshark-common/install-setuid
+        value: true
+        vtype: boolean
+
+    - name: Actualizar cache tras configuración
+      apt:
+        update_cache: yes
+
+    - name: Agregar usuario a grupo wireshark
+      user:
+        name: "{{ ansible_user }}"
+        groups: wireshark
+        append: yes
+
+    - name: Mostrar versión de Wireshark
+      command: wireshark --version
+      register: wireshark_version
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Depurar versión instalada
+      debug:
+        msg: "{{ wireshark_version.stdout }}"
